@@ -1,0 +1,140 @@
+<?php
+/*
+	Implementation of hook webform_stats_display_data
+*/
+function webform_stats_charts_webform_stats_display_data($data,$type_id,$metrics, $date_range, $aggregate){
+
+	$chart_data = array();
+		
+			foreach($data as $i => $report){
+				if(isset($report->title)){
+					if(strlen($report->title) > 40){
+						$title = substr($report->title,0,40)."...";
+					}
+					else{
+						$title = $report->title;
+					}
+				}
+				else{
+					$title = "Stats";
+				}
+				if($aggregate){
+				$aggregate_field = $report->$aggregate;
+				}
+				else{
+					$aggregate_field = $report->report_period_start;
+				}
+		
+				foreach($metrics as $i => $metric){
+					$report_data_field = "m".$metric->metric_id."_data";
+					$report_data[$metric->name] = $report->$report_data_field;
+				}
+				//$report_data['x_axis'] = $report->report_period_start;
+		
+				$chart_data[$aggregate_field]['data'] = $report_data;
+				if($aggregate == 'report_period_start' || !($aggregate)){
+					
+					$chart_data[$aggregate_field]['label'] = date('m/j/y',$report->report_period_start);
+				}
+				else{
+					$chart_data[$aggregate_field]['label'] = $report->nid;
+				}
+			}
+			$output = theme('webform_stats_chart_display',$chart_data,$title);
+	return $output;
+}
+
+/**
+* Implementation of hook_theme()
+*/
+function webform_stats_charts_theme() {
+return array(
+	'webform_stats_chart_display' => array(
+		'arguments' => array(
+			'chart_data' => NULL,
+			'title' => 'Contest Stats',
+		)
+	),
+);
+}
+
+function theme_webform_stats_chart_display($chart_data,$title){
+
+	$group_count = 0;
+	$bar_count = 0;
+	$max_data = 0;
+	foreach($chart_data as $i => $node_data){
+			$group_count++;
+			foreach($node_data['data'] as $j => $data){
+					$bar_count++;
+					$max_data = ($data > $max_data) ? $data : $max_data;
+			}
+		}
+
+	$width = 960;
+	$height = 300;
+	$whitespace = 250;
+	$bar_area = floor(($width-$whitespace-($group_count*7))/$bar_count);
+	$bar_width = floor($bar_area*0.75);
+	$bar_width = ($bar_width > 10) ? 10 : $bar_width;
+	$bar_width = ($bar_width > 2) ? $bar_width-1 : $bar_width;
+	$bar_margin = floor($bar_area*0.25);	
+	$bar_margin = ($bar_margin > 2) ? $bar_margin-1 : $bar_margin;
+	$bar_margin = ($bar_margin > 5) ? 5 : $bar_width;
+	
+	
+	$chart = array(
+		      '#chart_id' => 'recent_stats',
+		      '#title' => chart_title(t($title), '000000', 15),
+		      '#type' => CHART_TYPE_BAR_V_GROUPED,
+		      '#size' => chart_size($width,$height),
+		      '#adjust_resolution' => TRUE,
+					'#grid_lines' => chart_grid_lines(10, 15),
+      		'#bar_size' => chart_bar_size($bar_width, $bar_margin), 
+		    );
+
+		$max_entries = 0;
+		foreach($chart_data as $i => $node_data){
+				foreach($node_data['data'] as $j => $metric){
+					$chart['#data'][$j][] = $metric;
+					$chart['#data_colors'][$j] = chart_unique_color($j);
+					$chart['#legends'][$j] = t("$j");
+			}
+			$chart['#mixed_axis_labels'][CHART_AXIS_X_BOTTOM][0][] = chart_mixed_axis_label($node_data['label']);
+		}
+	
+
+		// $dates = array_unique($dates);
+		// sort($dates,SORT_NUMERIC);
+		// foreach($chart_data_dated as $i => $node_data){
+		// 	foreach($dates as $j => $date){
+		// 		$chart['#data'][$i][]	= (isset($chart_data_dated[$i][$date])) ? $chart_data_dated[$i][$date] : 0;
+		// 	}
+		// }
+		
+		// $colours = array(
+		// 'FF9900',
+		// 'FF0099',
+		// 'CCCC33',
+		// 'CC0000',
+		// '669900',
+		// '6633FF',
+		// '3333FF',
+		// '330066',
+		// '000033',
+		// '660000',
+		// '666699',
+		// 		);
+		// 		$j = 0;
+
+
+		 
+		$chart['#mixed_axis_labels'][CHART_AXIS_Y_LEFT][0][] = chart_mixed_axis_range_label(0, $max_data);
+		
+		foreach($chart_data as $i => $data){
+			
+		}
+		$chart['#mixed_axis_labels'][CHART_AXIS_X_BOTTOM][1][] = chart_mixed_axis_label(t('Webforms'),50);
+					
+		return chart_render($chart);
+}

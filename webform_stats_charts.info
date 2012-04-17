@@ -1,0 +1,8 @@
+; $Id:
+name            = "Webform Stats Charts"
+description     = "Display Charts for webform stats"
+core            = "6.x"
+version         = "6.x-1.0"
+
+dependencies[]  = webform_stats
+dependencies[]  = chart
