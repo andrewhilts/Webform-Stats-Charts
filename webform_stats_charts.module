@@ -85,7 +85,6 @@ function theme_webform_stats_chart_display($chart_data,$title){
 	
 	$chart = array(
 		      '#chart_id' => 'recent_stats',
-		      '#title' => chart_title(t($title), '000000', 15),
 		      '#type' => CHART_TYPE_BAR_V_GROUPED,
 		      '#size' => chart_size($width,$height),
 		      '#adjust_resolution' => TRUE,
